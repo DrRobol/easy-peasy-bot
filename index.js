@@ -8,6 +8,8 @@
  * With custom integrations, we don't have a way to find out who installed us, so we can't message them :(
  */
 
+const https = require("https");
+
 function onInstallation(bot, installer) {
   if (installer) {
     bot.startPrivateConversation({user: installer}, function (err, convo) {
@@ -89,16 +91,26 @@ controller.hears("hello", "direct_message", function (bot, message) {
   bot.reply(message, "Hello!");
 });
 
-controller.hears("zryc", ["direct_mention", "mention"], function (bot, message) {
+var phrases = ["żryć", "żryc", "zryć", "zryc"];
+
+controller.hears(phrases, ["direct_mention", "mention"], function (bot, message) {
+  fetch_menu(bot, message);
   // bot.reply(message, "niedługo wyświetlę menu!");
-  var reply = fetch_menu();
-  bot.reply(message, reply);
 });
 
-function fetch_menu() {
-  // todo fetch data from https://jsonplaceholder.typicode.com/posts/7
-  // todo test fetching module in a separate file
-  return "menu fetched from the api";
+function fetch_menu(bot, message) {
+  https.get("https://jsonplaceholder.typicode.com/posts/7", (res) => {
+    let data = "";
+    res.on("data", (chunk) => {
+      data += chunk;
+    });
+    res.on("end", () => {
+      let reply = JSON.parse(data).body;
+      bot.reply(message, reply);
+    });
+  }).on("error", (err) => {
+    console.log("Error: " + err.body);
+  });
 }
 
 /**
